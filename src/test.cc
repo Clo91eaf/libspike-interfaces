@@ -4,64 +4,50 @@
 #include "spike-interfaces.h"
 
 using Spike = uint64_t;
+using Entry_addr = uint32_t;
 
-void load_segment(int fd, Elf32_Phdr *phdr, Spike spike) {
-  void *mem = mmap((void*)phdr->p_vaddr, phdr->p_memsz, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0);
-  if (mem == MAP_FAILED) {
-    perror("mmap");
-    exit(1);
-  }
-
-  lseek(fd, phdr->p_offset, SEEK_SET);
-  read(fd, mem, phdr->p_filesz);
-
-
-  if (phdr->p_filesz < phdr->p_memsz) {
-    memset(mem + phdr->p_filesz, 0, phdr->p_memsz - phdr->p_filesz);
-  }
-
-  std::cerr << "Loaded segment " << phdr->p_vaddr << " - " << phdr->p_vaddr + phdr->p_memsz << std::endl;
-
-  spike_ld_elf(spike, phdr->p_vaddr, phdr->p_memsz, (uint8_t*)mem);
-}
-
-void load_elf(const char *filename) {
-  std::cerr << "Loaded " << filename << " into spike" << std::endl;
-
-  int fd = open(filename, O_RDONLY);
-  if (fd < 0) {
-    perror("open");
-    exit(1);
-  }
+// Load ELF file
+Entry_addr load_elf(Spike spike, const char* fname) {
+  // Open file
+  std::ifstream fs(fname, std::ios::binary);
+  fs.exceptions(std::ios::failbit);
 
   Elf32_Ehdr ehdr;
-  read(fd, &ehdr, sizeof(ehdr));
+  fs.read(reinterpret_cast<char*>(&ehdr), sizeof(ehdr));
 
-  Spike spike = spike_new(1 << 32);
-
-  for (int i = 0; i < ehdr.e_phnum; i++) {
+  // Load program headers
+  for (size_t i = 0; i < ehdr.e_phnum; i++) {
+    auto phdr_offset = ehdr.e_phoff + i * ehdr.e_phentsize;
     Elf32_Phdr phdr;
-    lseek(fd, ehdr.e_phoff + i * ehdr.e_phentsize, SEEK_SET);
-    read(fd, &phdr, sizeof(phdr));
-
+    fs.seekg((long)phdr_offset).read(reinterpret_cast<char*>(&phdr), sizeof(phdr));
     if (phdr.p_type == PT_LOAD) {
-      load_segment(fd, &phdr, spike);
-    }
+      uint8_t* buffer = new uint8_t[phdr.p_filesz];
 
-    std::cerr << "Loaded segment " << i << std::endl;
+      fs.seekg((long)phdr.p_offset).read(reinterpret_cast<char*>(buffer), phdr.p_filesz);
+      auto res = spike_ld_elf(spike, phdr.p_vaddr, phdr.p_filesz, buffer);
+
+      delete buffer;
+      assert(res == 0);
+    }
   }
 
-  spike_delete(spike);
-  close(fd);
+  return  ehdr.e_entry;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   if (argc != 2) {
-    fprintf(stderr, "Usage: %s <elf-file>\n", argv[0]);
+    std::cerr << "Usage: " << argv[0] << " <elf-file>" << std::endl;
     exit(1);
   }
 
-  load_elf(argv[1]);
+  Spike spike = spike_new((uint64_t)1 << 32);
+  std::cerr << "Creat spike: " << std::hex << spike << std::endl;
+
+  Entry_addr addr = load_elf(spike, argv[1]);
+
+  spike_init(spike, addr);
+
+  spike_delete(spike);
 
   return 0;
 }

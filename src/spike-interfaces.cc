@@ -161,12 +161,10 @@ class sim_t : public simif_t {
 
   virtual void proc_reset(unsigned id) override {}
   virtual const char* get_symbol(uint64_t addr) override { return NULL; }
-  [[nodiscard]] const cfg_t &get_cfg() const override {
-    assert(0);
-  }
+  [[nodiscard]] const cfg_t& get_cfg() const override { assert(0); }
 
-  [[nodiscard]] const std::map<size_t, processor_t *> &
-  get_harts() const override {
+  [[nodiscard]] const std::map<size_t, processor_t*>& get_harts()
+      const override {
     assert(0);
   }
 
@@ -224,6 +222,7 @@ uint64_t spike_new(uint64_t mem_size) {
 
 void spike_delete(uint64_t spike) {
   Spike* s = (Spike*)spike;
+  std::cerr << "Deleting spike: " << s << std::endl;
   delete s;
 }
 
@@ -296,4 +295,18 @@ int spike_ld_elf(uint64_t spike, uint64_t addr, uint64_t len, uint8_t* bytes) {
   } else {
     return -4;
   }
+}
+
+int spike_init(uint64_t spike, uint64_t entry_addr) {
+  Spike* s = (Spike*)spike;
+  processor_t* proc = s->get_proc();
+
+  proc->reset();
+
+  // Set the virtual supervisor mode and virtual user mode
+  auto status = proc->get_state()->sstatus->read() | SSTATUS_VS | SSTATUS_FS;
+  proc->get_state()->sstatus->write(status);
+  proc->get_state()->pc = entry_addr;
+
+  return 0;
 }
