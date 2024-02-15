@@ -1,4 +1,4 @@
-{ stdenv, cmake, libspike-interfaces }:
+{ stdenv, cmake, libspike }:
 
 stdenv.mkDerivation rec {
   pname = "test";
@@ -7,5 +7,5 @@ stdenv.mkDerivation rec {
   src = ../../src;
 
   nativeBuildInputs = [ cmake ];
-  buildInputs = [ libspike-interfaces ];
+  buildInputs = [ libspike ];
 }

@@ -1,2 +1,4 @@
+# vsc and nix
 .vscode/
+result/
 build/
