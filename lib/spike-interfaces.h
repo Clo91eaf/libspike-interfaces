@@ -9,6 +9,10 @@
 #include <queue>
 #include <string>
 #include <optional>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "disasm.h"
 #include "mmu.h"

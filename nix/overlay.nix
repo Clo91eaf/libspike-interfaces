@@ -2,5 +2,6 @@ final: prev:
 
 {
   libspike = final.callPackage ./pkgs/libspike.nix { };
-  spike-interfaces = final.callPackage ./spike-interfaces { };
+  libspike-interfaces = final.callPackage ./pkgs/libspike-interfaces.nix { };
+  test = final.callPackage ./test { };
 }

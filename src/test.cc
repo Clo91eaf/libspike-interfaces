@@ -1,7 +1,7 @@
 #include <elf.h>
 #include <sys/mman.h>
 
-#include <spike-interfaces.h>
+#include "spike-interfaces.h"
 
 using Spike = uint64_t;
 
