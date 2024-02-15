@@ -233,6 +233,10 @@ int32_t spike_execute(uint64_t spike) {
   auto state = proc->get_state();
   auto fetch = proc->get_mmu()->load_insn(state->pc);
 
+  std::cerr << "pc:" << fmt::format("{:08x}", state->pc) << std::endl;
+  std::cerr << "bits:" << fmt::format("{:08x}", fetch.insn.bits()) << std::endl;
+  std::cerr << "disasm:" << proc->get_disassembler()->disassemble(fetch.insn) << std::endl;
+
   reg_t pc = fetch.func(proc, fetch.insn, state->pc);
 
   if ((pc & 1) == 0) {

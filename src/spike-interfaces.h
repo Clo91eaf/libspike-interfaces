@@ -14,6 +14,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <fmt/core.h>
+#include <fmt/ranges.h>
+
 #include "disasm.h"
 #include "mmu.h"
 #include "processor.h"

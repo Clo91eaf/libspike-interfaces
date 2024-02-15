@@ -47,6 +47,10 @@ int main(int argc, char* argv[]) {
 
   spike_init(spike, addr);
 
+  for (int i = 0; i < 50; i++) {
+    spike_execute(spike);
+  }
+
   spike_delete(spike);
 
   return 0;
