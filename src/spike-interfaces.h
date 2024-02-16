@@ -22,6 +22,7 @@
 #include "processor.h"
 #include "simif.h"
 #include "cfg.h"
+#include "decode_macros.h"
 
 #ifdef __cplusplus
 extern "C" {

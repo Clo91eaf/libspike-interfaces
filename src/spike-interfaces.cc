@@ -192,6 +192,7 @@ class Spike {
 
 Spike::Spike(uint64_t mem_size)
     : sim(mem_size),
+      varch(fmt::format("vlen:{},elen:{}", 1024, 32)),
       isa("rv32gcv", "M"),
       cfg(/*default_initrd_bounds=*/std::make_pair((reg_t)0, (reg_t)0),
           /*default_bootargs=*/nullptr,
@@ -212,7 +213,12 @@ Spike::Spike(uint64_t mem_size)
           /*id*/ 0,
           /*halt on reset*/ true,
           /*log_file_t*/ nullptr,
-          /*sout*/ std::cerr) {}
+          /*sout*/ std::cerr) {
+  auto& csrmap = proc.get_state()->csrmap;
+  constexpr uint32_t CSR_MSIMEND = 0x7cc;
+  csrmap[CSR_MSIMEND] = std::make_shared<basic_csr_t>(&proc, CSR_MSIMEND, 0);
+  proc.enable_log_commits();
+}
 
 uint64_t spike_new(uint64_t mem_size) {
   Spike* spike = new Spike(mem_size);
@@ -234,18 +240,27 @@ int32_t spike_execute(uint64_t spike) {
   auto fetch = proc->get_mmu()->load_insn(state->pc);
 
   std::cerr << "pc:" << fmt::format("{:08x}", state->pc) << " ";
-  std::cerr << "bits:" << fmt::format("{:08x}", fetch.insn.bits()) << " ";
-  std::cerr << "disasm:" << proc->get_disassembler()->disassemble(fetch.insn) << std::endl;
+  std::cerr << "disasm:" << proc->get_disassembler()->disassemble(fetch.insn)
+            << "\n";
 
   reg_t pc = fetch.func(proc, fetch.insn, state->pc);
 
+// Bypass CSR insns commitlog stuff.
   if ((pc & 1) == 0) {
     state->pc = pc;
   } else {
-    return -1;
+    switch (pc) {
+    case PC_SERIALIZE_BEFORE:
+      state->serialized = true;
+      break;
+    case PC_SERIALIZE_AFTER:
+      break;
+    default:
+      std::cerr << "Unknown PC: " << fmt::format("{:08x}", pc) << "\n";
+    }
   }
 
-  return 0;
+    return 0;
 }
 
 int32_t spike_get_reg(uint64_t spike, uint64_t index, uint64_t* content) {
@@ -308,8 +323,8 @@ int spike_init(uint64_t spike, uint64_t entry_addr) {
   proc->reset();
 
   // Set the virtual supervisor mode and virtual user mode
-  auto status = proc->get_state()->sstatus->read() | SSTATUS_VS | SSTATUS_FS;
-  proc->get_state()->sstatus->write(status);
+  // auto status = proc->get_state()->sstatus->read() | SSTATUS_VS | SSTATUS_FS;
+  // proc->get_state()->sstatus->write(status);
   proc->get_state()->pc = entry_addr;
 
   return 0;

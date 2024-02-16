@@ -1,0 +1,114 @@
+
+./resources/conv-mlir.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00011124 <_start>:
+   11124:	4545                	li	a0,17
+   11126:	0526                	slli	a0,a0,0x9
+   11128:	30052073          	csrs	mstatus,a0
+   1112c:	00f05073          	csrwi	vcsr,0
+   11130:	00010117          	auipc	sp,0x10
+   11134:	01c10113          	addi	sp,sp,28 # 2114c <test>
+   11138:	00010097          	auipc	ra,0x10
+   1113c:	014080e7          	jalr	20(ra) # 2114c <test>
+
+00011140 <exit>:
+   11140:	90000537          	lui	a0,0x90000
+   11144:	55fd                	li	a1,-1
+   11146:	c14c                	sw	a1,4(a0)
+   11148:	7cc05073          	csrwi	0x7cc,0
+
+0001114c <stack_start>:
+	...
+
+0002114c <test>:
+   2114c:	ff010113          	addi	sp,sp,-16
+   21150:	00812623          	sw	s0,12(sp)
+   21154:	00000513          	li	a0,0
+   21158:	00000593          	li	a1,0
+   2115c:	00032637          	lui	a2,0x32
+   21160:	2b060613          	addi	a2,a2,688 # 322b0 <test+0x11164>
+   21164:	07e00693          	li	a3,126
+   21168:	00022737          	lui	a4,0x22
+   2116c:	2b070713          	addi	a4,a4,688 # 222b0 <test+0x1164>
+   21170:	000327b7          	lui	a5,0x32
+   21174:	2e078793          	addi	a5,a5,736 # 322e0 <test+0x11194>
+   21178:	0100006f          	j	21188 <test+0x3c>
+   2117c:	00150513          	addi	a0,a0,1 # 90000001 <test+0x8ffdeeb5>
+   21180:	00153813          	seqz	a6,a0
+   21184:	010585b3          	add	a1,a1,a6
+   21188:	00058863          	beqz	a1,21198 <test+0x4c>
+   2118c:	00b02833          	sgtz	a6,a1
+   21190:	00080a63          	beqz	a6,211a4 <test+0x58>
+   21194:	0e00006f          	j	21274 <test+0x128>
+   21198:	07e53813          	sltiu	a6,a0,126
+   2119c:	00184813          	xori	a6,a6,1
+   211a0:	0c081a63          	bnez	a6,21274 <test+0x128>
+   211a4:	00000893          	li	a7,0
+   211a8:	0100006f          	j	211b8 <test+0x6c>
+   211ac:	00180813          	addi	a6,a6,1
+   211b0:	00183293          	seqz	t0,a6
+   211b4:	005888b3          	add	a7,a7,t0
+   211b8:	00088863          	beqz	a7,211c8 <test+0x7c>
+   211bc:	011022b3          	sgtz	t0,a7
+   211c0:	00028a63          	beqz	t0,211d4 <test+0x88>
+   211c4:	fb9ff06f          	j	2117c <test+0x30>
+   211c8:	00383293          	sltiu	t0,a6,3
+   211cc:	0012c293          	xori	t0,t0,1
+   211d0:	fa0296e3          	bnez	t0,2117c <test+0x30>
+   211d4:	00000313          	li	t1,0
+   211d8:	0100006f          	j	211e8 <test+0x9c>
+   211dc:	00128293          	addi	t0,t0,1
+   211e0:	0012b393          	seqz	t2,t0
+   211e4:	00730333          	add	t1,t1,t2
+   211e8:	00030863          	beqz	t1,211f8 <test+0xac>
+   211ec:	006023b3          	sgtz	t2,t1
+   211f0:	00038a63          	beqz	t2,21204 <test+0xb8>
+   211f4:	fb9ff06f          	j	211ac <test+0x60>
+   211f8:	0032b393          	sltiu	t2,t0,3
+   211fc:	0013c393          	xori	t2,t2,1
+   21200:	fa0396e3          	bnez	t2,211ac <test+0x60>
+   21204:	00181393          	slli	t2,a6,0x1
+   21208:	00580e33          	add	t3,a6,t0
+   2120c:	01c383b3          	add	t2,t2,t3
+   21210:	00239393          	slli	t2,t2,0x2
+   21214:	007603b3          	add	t2,a2,t2
+   21218:	0003a383          	lw	t2,0(t2)
+   2121c:	07e00e13          	li	t3,126
+   21220:	fbc05ee3          	blez	t3,211dc <test+0x90>
+   21224:	0d1e7ed7          	vsetvli	t4,t3,e32,m2,ta,ma
+   21228:	41c68f33          	sub	t5,a3,t3
+   2122c:	01050fb3          	add	t6,a0,a6
+   21230:	01e28433          	add	s0,t0,t5
+   21234:	007f9f93          	slli	t6,t6,0x7
+   21238:	008f8fb3          	add	t6,t6,s0
+   2123c:	002f9f93          	slli	t6,t6,0x2
+   21240:	01f70fb3          	add	t6,a4,t6
+   21244:	020fe407          	vle32.v	v8,(t6)
+   21248:	02d50fb3          	mul	t6,a0,a3
+   2124c:	01ef8f33          	add	t5,t6,t5
+   21250:	002f1f13          	slli	t5,t5,0x2
+   21254:	01e78f33          	add	t5,a5,t5
+   21258:	020f6507          	vle32.v	v10,(t5)
+   2125c:	9683e457          	vmul.vx	v8,v8,t2
+   21260:	02850457          	vadd.vv	v8,v8,v10
+   21264:	020f6427          	vse32.v	v8,(t5)
+   21268:	41de0e33          	sub	t3,t3,t4
+   2126c:	fbc04ce3          	bgtz	t3,21224 <test+0xd8>
+   21270:	f6dff06f          	j	211dc <test+0x90>
+   21274:	00032537          	lui	a0,0x32
+   21278:	2e050513          	addi	a0,a0,736 # 322e0 <test+0x11194>
+   2127c:	02000593          	li	a1,32
+   21280:	0d35f057          	vsetvli	zero,a1,e32,m8,ta,ma
+   21284:	02056407          	vle32.v	v8,(a0)
+   21288:	7e002057          	vmset.m	v0
+   2128c:	cd047057          	vsetivli	zero,8,e32,m1,ta,ma
+   21290:	5e00b857          	vmv.v.i	v16,1
+   21294:	cd347057          	vsetivli	zero,8,e32,m8,ta,ma
+   21298:	00882457          	vredsum.vs	v8,v8,v16,v0.t
+   2129c:	42802557          	vmv.x.s	a0,v8
+   212a0:	00c12403          	lw	s0,12(sp)
+   212a4:	01010113          	addi	sp,sp,16
+   212a8:	00008067          	ret

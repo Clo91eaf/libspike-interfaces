@@ -19,11 +19,13 @@ Entry_addr load_elf(Spike spike, const char* fname) {
   for (size_t i = 0; i < ehdr.e_phnum; i++) {
     auto phdr_offset = ehdr.e_phoff + i * ehdr.e_phentsize;
     Elf32_Phdr phdr;
-    fs.seekg((long)phdr_offset).read(reinterpret_cast<char*>(&phdr), sizeof(phdr));
+    fs.seekg((long)phdr_offset)
+        .read(reinterpret_cast<char*>(&phdr), sizeof(phdr));
     if (phdr.p_type == PT_LOAD) {
       uint8_t* buffer = new uint8_t[phdr.p_filesz];
 
-      fs.seekg((long)phdr.p_offset).read(reinterpret_cast<char*>(buffer), phdr.p_filesz);
+      fs.seekg((long)phdr.p_offset)
+          .read(reinterpret_cast<char*>(buffer), phdr.p_filesz);
       auto res = spike_ld_elf(spike, phdr.p_vaddr, phdr.p_filesz, buffer);
 
       delete buffer;
@@ -31,7 +33,7 @@ Entry_addr load_elf(Spike spike, const char* fname) {
     }
   }
 
-  return  ehdr.e_entry;
+  return ehdr.e_entry;
 }
 
 int main(int argc, char* argv[]) {
@@ -47,9 +49,8 @@ int main(int argc, char* argv[]) {
 
   spike_init(spike, addr);
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 10; i++)
     spike_execute(spike);
-  }
 
   spike_delete(spike);
 
