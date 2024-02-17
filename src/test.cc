@@ -49,8 +49,10 @@ int main(int argc, char* argv[]) {
 
   spike_init(spike, addr);
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; ; i++) {
+    std::cerr << i << ": ";
     spike_execute(spike);
+  }
 
   spike_delete(spike);
 

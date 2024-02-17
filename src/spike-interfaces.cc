@@ -139,7 +139,7 @@ class sim_t : public simif_t {
     if (uart_addr <= addr && addr < uart_addr + sizeof(uartlite_regs)) {
       return uart.do_read(addr - uart_addr, len, bytes);
     }
-    assert(0);
+    return false;
   }
 
   bool mmio_store(reg_t addr, size_t len, const uint8_t* bytes) override {
@@ -151,7 +151,7 @@ class sim_t : public simif_t {
       }
       return res;
     }
-    assert(0);
+    return false;
   }
 
   bool load_elf(reg_t addr, size_t len, const uint8_t* bytes) {
