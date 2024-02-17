@@ -220,6 +220,16 @@ Spike::Spike(uint64_t mem_size)
   proc.enable_log_commits();
 }
 
+// Error codes
+enum ErrorCode {
+  SPIKE_SUCCESS,
+  SPIKE_ERROR,
+  SPIKE_LOAD_ERROR,
+  SPIKE_LOAD_ELF_ERROR,
+  SPIKE_STORE_ERROR,
+  SPIKE_INVALID_REG,
+};
+
 uint64_t spike_new(uint64_t mem_size) {
   Spike* spike = new Spike(mem_size);
 
@@ -245,41 +255,42 @@ int32_t spike_execute(uint64_t spike) {
 
   reg_t pc = fetch.func(proc, fetch.insn, state->pc);
 
-// Bypass CSR insns commitlog stuff.
+  // Bypass CSR insns commitlog stuff.
   if ((pc & 1) == 0) {
     state->pc = pc;
   } else {
     switch (pc) {
-    case PC_SERIALIZE_BEFORE:
-      state->serialized = true;
-      break;
-    case PC_SERIALIZE_AFTER:
-      break;
-    default:
-      std::cerr << "Unknown PC: " << fmt::format("{:08x}", pc) << "\n";
+      case PC_SERIALIZE_BEFORE:
+        state->serialized = true;
+        break;
+      case PC_SERIALIZE_AFTER:
+        break;
+      default:
+        std::cerr << "Unknown PC: " << fmt::format("{:08x}", pc) << "\n";
     }
   }
 
-    return 0;
+  return SPIKE_SUCCESS;
 }
+
 
 int32_t spike_get_reg(uint64_t spike, uint64_t index, uint64_t* content) {
   Spike* s = (Spike*)spike;
   processor_t* proc = s->get_proc();
   state_t* state = proc->get_state();
   *content = state->XPR[index];
-  return 0;
+  return SPIKE_SUCCESS;
 }
 
 int32_t spike_set_reg(uint64_t spike, uint64_t index, uint64_t content) {
   Spike* s = (Spike*)spike;
   processor_t* proc = s->get_proc();
   if (index >= NXPR) {
-    return -1;
+    return SPIKE_INVALID_REG;
   }
   state_t* state = proc->get_state();
   state->XPR.write(index, content);
-  return 0;
+  return SPIKE_SUCCESS;
 }
 
 int spike_ld(uint64_t spike, uint64_t addr, uint64_t len, uint8_t* bytes) {
@@ -288,9 +299,9 @@ int spike_ld(uint64_t spike, uint64_t addr, uint64_t len, uint8_t* bytes) {
   sim_t* sim = s->get_sim();
   bool success = sim->mmio_load(addr, len, bytes);
   if (success) {
-    return 0;
+    return SPIKE_SUCCESS;
   } else {
-    return -2;
+    return SPIKE_LOAD_ERROR;
   }
 }
 
@@ -299,9 +310,9 @@ int spike_sd(uint64_t spike, uint64_t addr, uint64_t len, uint8_t* bytes) {
   sim_t* sim = s->get_sim();
   bool success = sim->mmio_store(addr, len, bytes);
   if (success) {
-    return 0;
+    return SPIKE_SUCCESS;
   } else {
-    return -3;
+    return SPIKE_STORE_ERROR;
   }
 }
 
@@ -310,9 +321,9 @@ int spike_ld_elf(uint64_t spike, uint64_t addr, uint64_t len, uint8_t* bytes) {
   sim_t* sim = s->get_sim();
   bool success = sim->load_elf(addr, len, bytes);
   if (success) {
-    return 0;
+    return SPIKE_SUCCESS;
   } else {
-    return -4;
+    return SPIKE_LOAD_ELF_ERROR;
   }
 }
 
@@ -327,5 +338,5 @@ int spike_init(uint64_t spike, uint64_t entry_addr) {
   // proc->get_state()->sstatus->write(status);
   proc->get_state()->pc = entry_addr;
 
-  return 0;
+  return SPIKE_SUCCESS;
 }
