@@ -1,197 +1,7 @@
 #include "spike-interfaces.h"
 
-class mmio_dev {
- public:
-  virtual bool do_read(uint64_t start_addr, uint64_t size, uint8_t* buffer) = 0;
-  virtual bool do_write(uint64_t start_addr,
-                        uint64_t size,
-                        const uint8_t* buffer) = 0;
-};
-
-#define SR_TX_FIFO_EMPTY (1 << 2)      /* transmit FIFO empty */
-#define SR_RX_FIFO_VALID_DATA (1 << 0) /* data in receive FIFO */
-
-#define ULITE_CONTROL_RST_TX 0x01
-#define ULITE_CONTROL_RST_RX 0x02
-
-struct uartlite_regs {
-  unsigned int rx_fifo;
-  unsigned int tx_fifo;
-  unsigned int status;
-  unsigned int control;
-};
-
-class uartlite : public mmio_dev {
- public:
-  uartlite() { wait_ack = false; }
-  bool do_read(uint64_t start_addr, uint64_t size, unsigned char* buffer) {
-    if (size != 4)
-      return false;
-    uint32_t& res_buffer = *reinterpret_cast<uint32_t*>(buffer);
-    switch (start_addr) {
-      case offsetof(uartlite_regs, rx_fifo): {
-        std::unique_lock<std::mutex> lock(rx_lock);
-        if (!rx.empty()) {
-          res_buffer = rx.front();
-          rx.pop();
-        } else
-          res_buffer = 0;
-        break;
-      }
-      case offsetof(uartlite_regs, status): {
-        std::unique_lock<std::mutex> rxlock(rx_lock);
-        std::unique_lock<std::mutex> txlock(tx_lock);
-        res_buffer = (tx.empty() ? SR_TX_FIFO_EMPTY : 0) |
-                     (rx.empty() ? 0 : SR_RX_FIFO_VALID_DATA);
-        break;
-      }
-      case offsetof(uartlite_regs, control):
-      case offsetof(uartlite_regs, tx_fifo): {
-        res_buffer = 0;
-        break;
-      }
-      default:
-        return false;
-    }
-    return true;
-  }
-  bool do_write(uint64_t start_addr,
-                uint64_t size,
-                const unsigned char* buffer) {
-    if (size != 4)
-      return false;
-    switch (start_addr) {
-      case offsetof(uartlite_regs, tx_fifo): {
-        std::unique_lock<std::mutex> lock_tx(tx_lock);
-        tx.push(static_cast<char>(*buffer));
-        break;
-      }
-      case offsetof(uartlite_regs, control): {
-        if (*buffer & ULITE_CONTROL_RST_TX) {
-          std::unique_lock<std::mutex> lock_tx(tx_lock);
-          while (!tx.empty())
-            tx.pop();
-        }
-        if (*buffer & ULITE_CONTROL_RST_RX) {
-          std::unique_lock<std::mutex> lock_rx(rx_lock);
-          while (!rx.empty())
-            rx.pop();
-        }
-        break;
-      }
-      case offsetof(uartlite_regs, rx_fifo):
-      case offsetof(uartlite_regs, status): {
-        break;
-      }
-      default:
-        return false;
-    }
-    return true;
-  }
-  void putc(char c) {
-    std::unique_lock<std::mutex> lock(rx_lock);
-    rx.push(c);
-  }
-  char getc() {
-    std::unique_lock<std::mutex> lock(tx_lock);
-    if (!tx.empty()) {
-      char res = tx.front();
-      tx.pop();
-      if (tx.empty())
-        wait_ack = true;
-      return res;
-    } else
-      return -1;
-  }
-  bool exist_tx() {
-    std::unique_lock<std::mutex> lock(tx_lock);
-    return !tx.empty();
-  }
-  bool irq() {
-    std::unique_lock<std::mutex> lock(rx_lock);
-    return !rx.empty() || wait_ack;
-  }
-
- private:
-  uartlite_regs regs;
-  std::queue<char> rx;
-  std::queue<char> tx;
-  std::mutex rx_lock;
-  std::mutex tx_lock;
-  bool wait_ack;
-};
-
-class sim_t : public simif_t {
- public:
-  sim_t(uint64_t size) {
-    mem = new char[size];
-    mem_size = size;
-  }
-  ~sim_t() { delete[] mem; }
-  char* addr_to_mem(reg_t addr) override {
-    if (uart_addr <= addr && addr < uart_addr + sizeof(uartlite_regs)) {
-      return NULL;
-    }
-    return &mem[addr];
-  }
-
-  bool mmio_load(reg_t addr, size_t len, uint8_t* bytes) override {
-    if (uart_addr <= addr && addr < uart_addr + sizeof(uartlite_regs)) {
-      return uart.do_read(addr - uart_addr, len, bytes);
-    }
-    return false;
-  }
-
-  bool mmio_store(reg_t addr, size_t len, const uint8_t* bytes) override {
-    if (uart_addr <= addr && addr < uart_addr + sizeof(uartlite_regs)) {
-      bool res = uart.do_write(addr - uart_addr, len, bytes);
-      while (uart.exist_tx()) {
-        std::cerr << uart.getc();
-        std::cerr.flush();
-      }
-      return res;
-    }
-    return false;
-  }
-
-  bool load_elf(reg_t addr, size_t len, const uint8_t* bytes) {
-    memcpy(&mem[addr], bytes, len);
-    return true;
-  }
-
-  virtual void proc_reset(unsigned id) override {}
-  virtual const char* get_symbol(uint64_t addr) override { return NULL; }
-  [[nodiscard]] const cfg_t& get_cfg() const override { assert(0); }
-
-  [[nodiscard]] const std::map<size_t, processor_t*>& get_harts()
-      const override {
-    assert(0);
-  }
-
- private:
-  char* mem;
-  uint64_t mem_size;
-  uartlite uart;
-  reg_t uart_addr = 0x60000000;
-};
-
-class Spike {
- public:
-  Spike(uint64_t mem_size);
-
-  processor_t* get_proc() { return &proc; }
-  sim_t* get_sim() { return &sim; }
-
- private:
-  std::string varch;
-  cfg_t cfg;
-  sim_t sim;
-  isa_parser_t isa;
-  processor_t proc;
-};
-
-Spike::Spike(uint64_t mem_size)
-    : sim(mem_size),
+Spike::Spike()
+    : sim(),
       varch(fmt::format("vlen:{},elen:{}", 1024, 32)),
       isa("rv32gcv", "M"),
       cfg(/*default_initrd_bounds=*/std::make_pair((reg_t)0, (reg_t)0),
@@ -220,123 +30,55 @@ Spike::Spike(uint64_t mem_size)
   proc.enable_log_commits();
 }
 
-// Error codes
-enum ErrorCode {
-  SPIKE_SUCCESS,
-  SPIKE_ERROR,
-  SPIKE_LOAD_ERROR,
-  SPIKE_LOAD_ELF_ERROR,
-  SPIKE_STORE_ERROR,
-  SPIKE_INVALID_REG,
-};
-
-uint64_t spike_new(uint64_t mem_size) {
-  Spike* spike = new Spike(mem_size);
-
-  return (uint64_t)spike;
+spike_t* spike_new() {
+  return new spike_t{new Spike()};
 }
 
-void spike_delete(uint64_t spike) {
-  Spike* s = (Spike*)spike;
-  std::cerr << "Deleting spike: " << s << std::endl;
-  delete s;
+const char* proc_disassemble(spike_processor_t* proc,
+                             spike_insn_fetch_t* fetch) {
+  auto d = proc->p->get_disassembler();
+  // TODO: free this memory
+  return strdup(d->disassemble(fetch->f.insn).c_str());
 }
 
-int32_t spike_execute(uint64_t spike) {
-  Spike* s = (Spike*)spike;
-  processor_t* proc = s->get_proc();
-
-  auto state = proc->get_state();
-  auto fetch = proc->get_mmu()->load_insn(state->pc);
-
-  std::cerr << "pc:" << fmt::format("{:08x}", state->pc) << " ";
-  std::cerr << "disasm:" << proc->get_disassembler()->disassemble(fetch.insn)
-            << "\n";
-
-  reg_t pc = fetch.func(proc, fetch.insn, state->pc);
-
-  // Bypass CSR insns commitlog stuff.
-  if ((pc & 1) == 0) {
-    state->pc = pc;
-  } else {
-    switch (pc) {
-      case PC_SERIALIZE_BEFORE:
-        state->serialized = true;
-        break;
-      case PC_SERIALIZE_AFTER:
-        break;
-      default:
-        std::cerr << "Unknown PC: " << fmt::format("{:08x}", pc) << "\n";
-    }
-  }
-
-  return SPIKE_SUCCESS;
+// TODO: free this memory
+spike_processor_t* spike_get_proc(spike_t* spike) {
+  return new spike_processor_t{spike->s->get_proc()};
 }
 
-
-int32_t spike_get_reg(uint64_t spike, uint64_t index, uint64_t* content) {
-  Spike* s = (Spike*)spike;
-  processor_t* proc = s->get_proc();
-  state_t* state = proc->get_state();
-  *content = state->XPR[index];
-  return SPIKE_SUCCESS;
+void proc_reset(spike_processor_t* proc) {
+  proc->p->reset();
 }
 
-int32_t spike_set_reg(uint64_t spike, uint64_t index, uint64_t content) {
-  Spike* s = (Spike*)spike;
-  processor_t* proc = s->get_proc();
-  if (index >= NXPR) {
-    return SPIKE_INVALID_REG;
-  }
-  state_t* state = proc->get_state();
-  state->XPR.write(index, content);
-  return SPIKE_SUCCESS;
+// TODO: free this memory
+spike_state_t* proc_get_state(spike_processor_t* proc) {
+  return new spike_state_t{proc->p->get_state()};
 }
 
-int spike_ld(uint64_t spike, uint64_t addr, uint64_t len, uint8_t* bytes) {
-  Spike* s = (Spike*)spike;
-  processor_t* proc = s->get_proc();
-  sim_t* sim = s->get_sim();
-  bool success = sim->mmio_load(addr, len, bytes);
-  if (success) {
-    return SPIKE_SUCCESS;
-  } else {
-    return SPIKE_LOAD_ERROR;
-  }
+// TODO: free this memory
+spike_mmu_t* proc_get_mmu(spike_processor_t* proc) {
+  return new spike_mmu_t{proc->p->get_mmu()};
 }
 
-int spike_sd(uint64_t spike, uint64_t addr, uint64_t len, uint8_t* bytes) {
-  Spike* s = (Spike*)spike;
-  sim_t* sim = s->get_sim();
-  bool success = sim->mmio_store(addr, len, bytes);
-  if (success) {
-    return SPIKE_SUCCESS;
-  } else {
-    return SPIKE_STORE_ERROR;
-  }
+// TODO: free this memory
+spike_insn_fetch_t* mmu_load_insn(spike_mmu_t* mmu, reg_t addr) {
+  return new spike_insn_fetch_t{mmu->m->load_insn(addr)};
 }
 
-int spike_ld_elf(uint64_t spike, uint64_t addr, uint64_t len, uint8_t* bytes) {
-  Spike* s = (Spike*)spike;
-  sim_t* sim = s->get_sim();
-  bool success = sim->load_elf(addr, len, bytes);
-  if (success) {
-    return SPIKE_SUCCESS;
-  } else {
-    return SPIKE_LOAD_ELF_ERROR;
-  }
+reg_t insn_fetch_func(spike_insn_fetch_t* fetch,
+                      spike_processor_t* proc,
+                      reg_t pc) {
+  return fetch->f.func(proc->p, fetch->f.insn, pc);
 }
 
-int spike_init(uint64_t spike, uint64_t entry_addr) {
-  Spike* s = (Spike*)spike;
-  processor_t* proc = s->get_proc();
+reg_t state_get_pc(spike_state_t* state) {
+  return state->s->pc;
+}
 
-  proc->reset();
+void state_set_pc(spike_state_t* state, reg_t pc) {
+  state->s->pc = pc;
+}
 
-  // Set the virtual supervisor mode and virtual user mode
-  // auto status = proc->get_state()->sstatus->read() | SSTATUS_VS | SSTATUS_FS;
-  // proc->get_state()->sstatus->write(status);
-  proc->get_state()->pc = entry_addr;
-
-  return SPIKE_SUCCESS;
+void state_set_serialized(spike_state_t* state, bool serialized) {
+  state->s->serialized = serialized;
 }

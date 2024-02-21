@@ -3,11 +3,13 @@
 
 #include "spike-interfaces.h"
 
-using Spike = uint64_t;
 using Entry_addr = uint32_t;
+char mem[1u << 31];
+
+ffi_callback ffi_addr_to_mem;
 
 // Load ELF file
-Entry_addr load_elf(Spike spike, const char* fname) {
+Entry_addr load_elf(const char* fname) {
   // Open file
   std::ifstream fs(fname, std::ios::binary);
   fs.exceptions(std::ios::failbit);
@@ -22,39 +24,75 @@ Entry_addr load_elf(Spike spike, const char* fname) {
     fs.seekg((long)phdr_offset)
         .read(reinterpret_cast<char*>(&phdr), sizeof(phdr));
     if (phdr.p_type == PT_LOAD) {
-      uint8_t* buffer = new uint8_t[phdr.p_filesz];
-
       fs.seekg((long)phdr.p_offset)
-          .read(reinterpret_cast<char*>(buffer), phdr.p_filesz);
-      auto res = spike_ld_elf(spike, phdr.p_vaddr, phdr.p_filesz, buffer);
-
-      delete buffer;
-      assert(res == 0);
+          .read(reinterpret_cast<char*>(&mem[phdr.p_paddr]), phdr.p_filesz);
     }
   }
 
   return ehdr.e_entry;
 }
 
+char* addr_to_mem(uint64_t addr) {
+  return &mem[addr];
+}
+
+void spike_register_callback(ffi_callback callback) {
+  ffi_addr_to_mem = callback;
+
+  return ;
+}
+
+void execute(spike_t* spike) {
+  spike_processor_t* proc = spike_get_proc(spike);
+  spike_state_t* state = proc_get_state(proc);
+
+  reg_t pc = state_get_pc(state);
+  spike_insn_fetch_t* insn_fetch = mmu_load_insn(proc_get_mmu(proc), pc);
+  auto disasm = proc_disassemble(proc, insn_fetch);
+
+  fprintf(stderr, "PC: %08x, disasm: %s\n", pc, disasm);
+
+  reg_t new_pc = insn_fetch_func(insn_fetch, proc, pc);
+
+  // Bypass CSR insns commitlog stuff.
+  if ((new_pc & 1) == 0) {
+    state_set_pc(state, new_pc);
+  } else {
+    switch (new_pc) {
+      case PC_SERIALIZE_BEFORE:
+        state_set_serialized(state, true);
+        break;
+      case PC_SERIALIZE_AFTER:
+        break;
+      default:
+        fprintf(stderr, "Unknown PC: %08x\n", new_pc);
+    }
+  }
+}
+
 int main(int argc, char* argv[]) {
   if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " <elf-file>" << std::endl;
     exit(1);
   }
 
-  Spike spike = spike_new((uint64_t)1 << 32);
-  std::cerr << "Creat spike: " << std::hex << spike << std::endl;
+  // Register callback function for memory access
+  spike_register_callback(addr_to_mem);
 
-  Entry_addr addr = load_elf(spike, argv[1]);
 
-  spike_init(spike, addr);
+  // Prepare memory
+  Entry_addr addr = load_elf(argv[1]);
 
-  for (int i = 0; ; i++) {
-    std::cerr << i << ": ";
-    spike_execute(spike);
+  // Initialize spike
+  spike_t* spike = spike_new();
+  spike_processor_t* proc = spike_get_proc(spike);
+  spike_state_t* state = proc_get_state(proc);
+  proc_reset(proc);
+  state_set_pc(state, addr);
+
+  // execute
+  for (int i = 0; i < 10; i++) {
+    execute(spike);
   }
-
-  spike_delete(spike);
 
   return 0;
 }
