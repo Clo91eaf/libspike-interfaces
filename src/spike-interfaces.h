@@ -48,7 +48,7 @@ class sim_t : public simif_t {
 
 class Spike {
  public:
-  Spike();
+  Spike(const char* arch, const char* set, const char* lvl);
   processor_t* get_proc() { return &proc; }
 
  private:
@@ -66,7 +66,7 @@ struct spike_mmu_t { mmu_t* m; };
 struct spike_insn_fetch_t { insn_fetch_t f; };
 
 
-spike_t* spike_new();
+spike_t* spike_new(const char* varch, const char* isa, const char* priv);
 extern void spike_register_callback(ffi_callback callback);
 const char* proc_disassemble(spike_processor_t* proc, spike_insn_fetch_t* fetch);
 void proc_reset(spike_processor_t* proc);

@@ -85,7 +85,10 @@ int main(int argc, char* argv[]) {
   Entry_addr addr = load_elf(argv[1]);
 
   // Initialize spike
-  spike_t* spike = spike_new();
+  const char* varch = "vlen:1024,elen:32";
+  const char* isa = "rv32gcv";
+  const char* priv = "M";
+  spike_t* spike = spike_new(varch, isa, priv);
   spike_processor_t* proc = spike_get_proc(spike);
   spike_state_t* state = proc_get_state(proc);
   proc_reset(proc);

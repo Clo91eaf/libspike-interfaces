@@ -1,9 +1,9 @@
 #include "spike-interfaces.h"
 
-Spike::Spike()
+Spike::Spike(const char* arch, const char* set, const char* lvl)
     : sim(),
-      varch(fmt::format("vlen:{},elen:{}", 1024, 32)),
-      isa("rv32gcv", "M"),
+      varch(arch),
+      isa(set, lvl),
       cfg(/*default_initrd_bounds=*/std::make_pair((reg_t)0, (reg_t)0),
           /*default_bootargs=*/nullptr,
           /*default_isa=*/DEFAULT_ISA,
@@ -30,8 +30,8 @@ Spike::Spike()
   proc.enable_log_commits();
 }
 
-spike_t* spike_new() {
-  return new spike_t{new Spike()};
+spike_t* spike_new(const char* arch, const char* set, const char* lvl) {
+  return new spike_t{new Spike(arch, set, lvl)};
 }
 
 const char* proc_disassemble(spike_processor_t* proc,
