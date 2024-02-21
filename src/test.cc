@@ -45,14 +45,14 @@ void spike_register_callback(ffi_callback callback) {
 void execute(spike_t* spike) {
   spike_processor_t* proc = spike_get_proc(spike);
   spike_state_t* state = proc_get_state(proc);
+  spike_mmu_t* mmu = proc_get_mmu(proc);
 
   reg_t pc = state_get_pc(state);
-  spike_insn_fetch_t* insn_fetch = mmu_load_insn(proc_get_mmu(proc), pc);
-  const char* disasm = proc_disassemble(proc, insn_fetch);
+  const char* disasm = proc_disassemble(proc, mmu, pc);
 
   fprintf(stderr, "PC: %08x, disasm: %s\n", pc, disasm);
 
-  reg_t new_pc = insn_fetch_func(insn_fetch, proc, pc);
+  reg_t new_pc = mmu_func(mmu, proc, pc);
 
   // Bypass CSR insns commitlog stuff.
   if ((new_pc & 1) == 0) {
@@ -70,7 +70,6 @@ void execute(spike_t* spike) {
   }
 
   delete[] disasm;
-  destruct(insn_fetch);
 }
 
 int main(int argc, char* argv[]) {
