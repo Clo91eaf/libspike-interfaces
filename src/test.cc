@@ -99,6 +99,7 @@ int main(int argc, char* argv[]) {
     execute(spike);
   }
 
+  // destruct
   destruct(state);
   destruct(proc);
   destruct(spike);

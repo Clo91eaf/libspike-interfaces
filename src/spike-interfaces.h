@@ -1,23 +1,6 @@
 #ifndef __SPIKE_INTERFCES_H__
 #define __SPIKE_INTERFCES_H__
 
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <algorithm>
-#include <cstdint>
-#include <cstring>
-#include <functional>
-#include <iostream>
-#include <mutex>
-#include <optional>
-#include <queue>
-#include <string>
-
-#include <fmt/core.h>
-#include <fmt/ranges.h>
-
 #include "cfg.h"
 #include "decode_macros.h"
 #include "disasm.h"
@@ -64,7 +47,6 @@ struct spike_processor_t { processor_t* p; };
 struct spike_state_t { state_t* s; };
 struct spike_mmu_t { mmu_t* m; };
 struct spike_insn_fetch_t { insn_fetch_t f; };
-
 
 spike_t* spike_new(const char* varch, const char* isa, const char* priv);
 extern void spike_register_callback(ffi_callback callback);
