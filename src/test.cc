@@ -39,7 +39,7 @@ char* addr_to_mem(uint64_t addr) {
 void spike_register_callback(ffi_callback callback) {
   ffi_addr_to_mem = callback;
 
-  return ;
+  return;
 }
 
 void execute(spike_t* spike) {
@@ -48,7 +48,7 @@ void execute(spike_t* spike) {
 
   reg_t pc = state_get_pc(state);
   spike_insn_fetch_t* insn_fetch = mmu_load_insn(proc_get_mmu(proc), pc);
-  auto disasm = proc_disassemble(proc, insn_fetch);
+  const char* disasm = proc_disassemble(proc, insn_fetch);
 
   fprintf(stderr, "PC: %08x, disasm: %s\n", pc, disasm);
 
@@ -68,6 +68,9 @@ void execute(spike_t* spike) {
         fprintf(stderr, "Unknown PC: %08x\n", new_pc);
     }
   }
+
+  delete[] disasm;
+  destruct(insn_fetch);
 }
 
 int main(int argc, char* argv[]) {
@@ -77,7 +80,6 @@ int main(int argc, char* argv[]) {
 
   // Register callback function for memory access
   spike_register_callback(addr_to_mem);
-
 
   // Prepare memory
   Entry_addr addr = load_elf(argv[1]);
@@ -93,6 +95,10 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < 10; i++) {
     execute(spike);
   }
+
+  destruct(state);
+  destruct(proc);
+  destruct(spike);
 
   return 0;
 }

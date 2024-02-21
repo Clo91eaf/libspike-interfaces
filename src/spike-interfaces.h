@@ -78,6 +78,7 @@ reg_t insn_fetch_func(spike_insn_fetch_t* fetch, spike_processor_t* proc, reg_t 
 reg_t state_get_pc(spike_state_t* state);
 void state_set_pc(spike_state_t* state, reg_t pc);
 void state_set_serialized(spike_state_t* state, bool serialized);
+void destruct(void* ptr);
 
 #ifdef __cplusplus
 }

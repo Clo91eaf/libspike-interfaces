@@ -37,11 +37,9 @@ spike_t* spike_new() {
 const char* proc_disassemble(spike_processor_t* proc,
                              spike_insn_fetch_t* fetch) {
   auto d = proc->p->get_disassembler();
-  // TODO: free this memory
   return strdup(d->disassemble(fetch->f.insn).c_str());
 }
 
-// TODO: free this memory
 spike_processor_t* spike_get_proc(spike_t* spike) {
   return new spike_processor_t{spike->s->get_proc()};
 }
@@ -50,17 +48,14 @@ void proc_reset(spike_processor_t* proc) {
   proc->p->reset();
 }
 
-// TODO: free this memory
 spike_state_t* proc_get_state(spike_processor_t* proc) {
   return new spike_state_t{proc->p->get_state()};
 }
 
-// TODO: free this memory
 spike_mmu_t* proc_get_mmu(spike_processor_t* proc) {
   return new spike_mmu_t{proc->p->get_mmu()};
 }
 
-// TODO: free this memory
 spike_insn_fetch_t* mmu_load_insn(spike_mmu_t* mmu, reg_t addr) {
   return new spike_insn_fetch_t{mmu->m->load_insn(addr)};
 }
@@ -81,4 +76,9 @@ void state_set_pc(spike_state_t* state, reg_t pc) {
 
 void state_set_serialized(spike_state_t* state, bool serialized) {
   state->s->serialized = serialized;
+}
+
+void destruct(void* ptr) {
+  if (ptr == nullptr) return;
+  delete ptr;
 }
