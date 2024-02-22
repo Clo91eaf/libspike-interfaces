@@ -14,11 +14,11 @@ This project provides a set of C language functions and data structures that ser
 
 ## Getting Started
 
-### Seting Up the Development Environment
+### Set Up the Development Environment
 
 We use nix flake as our primary build system. If you have not installed nix, install it following the [guide](https://nixos.org/manual/nix/stable/installation/installing-binary.html), and enable flake following the [wiki](https://nixos.wiki/wiki/Flakes#Enable_flakes). Or you can try the [installer](https://github.com/DeterminateSystems/nix-installer) provided by Determinate Systems, which enables flake by default.
 
-### Building the Library
+### Build the Library
 
 To build the library, run:
 
@@ -28,16 +28,16 @@ nix build .#libspike-interfaces
 
 The resulting shared library (`libspike-interfaces.so`) will be available in the `result/lib`.
 
-### Running Example Code
+### Run & Test Example Code
 
-You can run the example code as follows:
+You can run and test the example code as follows:
 
 ```bash
 nix build .#elfloader
 ./result/bin/elfloader ./resources/conv-mlir.elf
 ```
 
-Alternatively, you can use Nix to run the example in one line:
+Alternatively, you can use nix to run in one line:
 
 ```bash
 nix run .#elfloader ./resources/conv-mlir.elf

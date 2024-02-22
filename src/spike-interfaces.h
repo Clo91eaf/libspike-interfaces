@@ -59,6 +59,7 @@ reg_t state_get_pc(spike_state_t* state);
 void state_set_pc(spike_state_t* state, reg_t pc);
 void state_set_serialized(spike_state_t* state, bool serialized);
 void destruct(void* ptr);
+reg_t spike_exit(spike_state_t* state);
 
 #ifdef __cplusplus
 }

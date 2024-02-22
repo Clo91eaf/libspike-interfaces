@@ -1,5 +1,7 @@
 #include "spike-interfaces.h"
 
+constexpr uint32_t CSR_MSIMEND = 0x7cc;
+
 Spike::Spike(const char* arch, const char* set, const char* lvl)
     : sim(),
       varch(arch),
@@ -25,8 +27,7 @@ Spike::Spike(const char* arch, const char* set, const char* lvl)
           /*log_file_t*/ nullptr,
           /*sout*/ std::cerr) {
   auto& csrmap = proc.get_state()->csrmap;
-  constexpr uint32_t CSR_MSIMEND = 0x7cc;
-  csrmap[CSR_MSIMEND] = std::make_shared<basic_csr_t>(&proc, CSR_MSIMEND, 0);
+  csrmap[CSR_MSIMEND] = std::make_shared<basic_csr_t>(&proc, CSR_MSIMEND, 1);
   proc.enable_log_commits();
 }
 
@@ -79,4 +80,9 @@ void destruct(void* ptr) {
   if (ptr == nullptr)
     return;
   delete ptr;
+}
+
+reg_t spike_exit(spike_state_t* state) {
+  auto &csrmap = state->s->csrmap;
+  return csrmap[CSR_MSIMEND]->read();
 }

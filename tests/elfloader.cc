@@ -3,7 +3,7 @@
 
 #include "spike-interfaces.h"
 
-char mem[1u << 31];
+char mem[1l << 32];
 ffi_callback ffi_addr_to_mem;
 
 // Load ELF file
@@ -40,7 +40,7 @@ void spike_register_callback(ffi_callback callback) {
   return;
 }
 
-void execute(spike_t* spike) {
+uint32_t execute(spike_t* spike) {
   spike_processor_t* proc = spike_get_proc(spike);
   spike_state_t* state = proc_get_state(proc);
   spike_mmu_t* mmu = proc_get_mmu(proc);
@@ -51,6 +51,10 @@ void execute(spike_t* spike) {
   fprintf(stderr, "PC: %08x, disasm: %s\n", pc, disasm);
 
   reg_t new_pc = mmu_func(mmu, proc, pc);
+
+  if (spike_exit(state) == 0) {
+    return -1;
+  }
 
   // Bypass CSR insns commitlog stuff.
   if ((new_pc & 1) == 0) {
@@ -64,10 +68,12 @@ void execute(spike_t* spike) {
         break;
       default:
         fprintf(stderr, "Unknown PC: %08x\n", new_pc);
+        return -1;
     }
   }
 
   delete[] disasm;
+  return 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -92,14 +98,23 @@ int main(int argc, char* argv[]) {
   state_set_pc(state, addr);
 
   // execute
-  for (int i = 0; i < 10; i++) {
-    execute(spike);
+  while (true) {
+    int ret = execute(spike);
+    if (ret)
+      break;
   }
+
+  int exit_success = spike_exit(state);
 
   // destruct
   destruct(state);
   destruct(proc);
   destruct(spike);
 
-  return 0;
+  if (exit_success == 0) {
+    fprintf(stderr, "Success\n");
+  } else {
+    fprintf(stderr, "Failed\n");
+  }
+  return exit_success;
 }
