@@ -3,13 +3,11 @@
 
 #include "spike-interfaces.h"
 
-using Entry_addr = uint32_t;
 char mem[1u << 31];
-
 ffi_callback ffi_addr_to_mem;
 
 // Load ELF file
-Entry_addr load_elf(const char* fname) {
+uint32_t load_elf(const char* fname) {
   // Open file
   std::ifstream fs(fname, std::ios::binary);
   fs.exceptions(std::ios::failbit);
@@ -81,7 +79,7 @@ int main(int argc, char* argv[]) {
   spike_register_callback(addr_to_mem);
 
   // Prepare memory
-  Entry_addr addr = load_elf(argv[1]);
+  uint32_t addr = load_elf(argv[1]);
 
   // Initialize spike
   const char* varch = "vlen:1024,elen:32";

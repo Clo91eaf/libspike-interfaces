@@ -34,7 +34,9 @@ spike_t* spike_new(const char* arch, const char* set, const char* lvl) {
   return new spike_t{new Spike(arch, set, lvl)};
 }
 
-const char* proc_disassemble(spike_processor_t* proc, spike_mmu_t* mmu, reg_t pc) {
+const char* proc_disassemble(spike_processor_t* proc,
+                             spike_mmu_t* mmu,
+                             reg_t pc) {
   auto fetch = mmu->m->load_insn(pc);
   auto disasm = proc->p->get_disassembler();
   return strdup(disasm->disassemble(fetch.insn).c_str());
