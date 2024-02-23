@@ -10,12 +10,6 @@ use tracing_subscriber::{EnvFilter, FmtSubscriber};
 struct Args {
 	#[arg(short, long)]
 	elf_file: String,
-
-	#[arg(short, long)]
-	fst_file: String,
-
-	#[arg(short, long)]
-	config: String,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -31,7 +25,7 @@ fn main() -> anyhow::Result<()> {
 
 	let args = Args::parse();
 
-	let mut diff = Difftest::new(1usize << 32, &args.elf_file, &args.fst_file);
+	let mut diff = Difftest::new(1usize << 32, &args.elf_file);
 
 	loop {
 		diff.execute().unwrap();

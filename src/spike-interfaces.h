@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 typedef char* (*ffi_callback)(uint64_t);
-extern ffi_callback ffi_addr_to_mem;
+ffi_callback ffi_addr_to_mem;
 
 class sim_t : public simif_t {
  public:
@@ -55,7 +55,7 @@ struct spike_mmu_t {
   mmu_t* m;
 };
 
-extern void spike_register_callback(ffi_callback callback);
+void spike_register_callback(ffi_callback callback);
 spike_t* spike_new(const char* arch, const char* set, const char* lvl);
 const char* proc_disassemble(spike_processor_t* proc,
                              spike_mmu_t* mmu,

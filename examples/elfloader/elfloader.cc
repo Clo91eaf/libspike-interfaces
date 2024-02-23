@@ -4,7 +4,6 @@
 #include "spike-interfaces.h"
 
 char mem[1l << 32];
-ffi_callback ffi_addr_to_mem;
 
 // Load ELF file
 uint32_t load_elf(const char* fname) {
@@ -32,12 +31,6 @@ uint32_t load_elf(const char* fname) {
 
 char* addr_to_mem(uint64_t addr) {
   return &mem[addr];
-}
-
-void spike_register_callback(ffi_callback callback) {
-  ffi_addr_to_mem = callback;
-
-  return;
 }
 
 uint32_t execute(spike_t* spike) {

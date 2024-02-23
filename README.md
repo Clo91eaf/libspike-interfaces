@@ -30,7 +30,7 @@ The resulting shared library (`libspike-interfaces.so`) will be available in the
 
 ### Run & Test Example Code
 
-You can run and test the example code as follows:
+You can run and test the C example code as follows:
 
 ```bash
 nix build .#elfloader
@@ -41,6 +41,12 @@ Alternatively, you can just run in one line:
 
 ```bash
 nix run .#elfloader ./resources/conv-mlir.elf
+```
+
+And you can run and test the Rust example code as follows:
+
+```bash
+nix run .#rs-elfloader -- -e ./resources/conv-mlir.elf
 ```
 
 ## Contributing

@@ -53,10 +53,10 @@ impl Drop for Mmu {
 }
 
 type FfiCallback = extern "C" fn(u64) -> *mut u8;
-static mut FFI_ADDR_TO_MEM: Option<FfiCallback> = None;
 
 #[link(name = "spike-interfaces")]
 extern "C" {
+  pub fn spike_register_callback(callback: FfiCallback);
 	pub fn spike_new(arch: *const c_char, set: *const c_char, lvl: *const c_char) -> *const Spike;
 	pub fn proc_disassemble(proc: *const Processor, mmu: *const Mmu, pc: u64) -> *const c_char;
 	pub fn proc_reset(proc: *const Processor);
@@ -71,9 +71,3 @@ extern "C" {
 	pub fn spike_exit(state: *const State) -> u64;
 }
 
-#[no_mangle]
-pub extern "C" fn spike_register_callback(callback: FfiCallback) {
-	unsafe {
-		FFI_ADDR_TO_MEM = Some(callback);
-	}
-}

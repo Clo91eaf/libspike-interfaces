@@ -24,18 +24,29 @@ pub extern "C" fn rs_addr_to_mem(addr: u64) -> *mut u8 {
 	&mut spike_mut.mem[addr] as *mut u8
 }
 
-
 pub struct SpikeMem {
 	pub mem: Vec<u8>,
+	pub size: usize,
 }
 
 lazy_static! {
 	static ref SPIKE_MEM: Mutex<Option<Box<SpikeMem>>> = Mutex::new(None);
 }
 
+fn init_memory(size: usize) {
+	let mut spike_mem = SPIKE_MEM.lock().unwrap();
+	if spike_mem.is_none() {
+		info!("Creating SpikeMem with size: 0x{:x}", size);
+		*spike_mem = Some(Box::new(SpikeMem { mem: vec![0; size], size }));
+	}
+}
+
 fn ld(addr: usize, len: usize, bytes: Vec<u8>) -> anyhow::Result<()> {
+	info!("ld: addr: 0x{:x}, len: 0x{:x}", addr, len);
 	let mut spike_mem = SPIKE_MEM.lock().unwrap();
 	let spike_ref = spike_mem.as_mut().unwrap();
+
+	assert!(addr + len <= spike_ref.size);
 
 	let dst = &mut spike_ref.mem[addr..addr + len];
 	for (i, byte) in bytes.iter().enumerate() {
@@ -45,7 +56,7 @@ fn ld(addr: usize, len: usize, bytes: Vec<u8>) -> anyhow::Result<()> {
 	Ok(())
 }
 
-pub fn load_elf(fname: &str) -> anyhow::Result<u64> {
+fn load_elf(fname: &str) -> anyhow::Result<u64> {
 	let mut file = File::open(fname).unwrap();
 	let mut buffer = Vec::new();
 	file.read_to_end(&mut buffer).unwrap();
@@ -65,7 +76,6 @@ pub fn load_elf(fname: &str) -> anyhow::Result<u64> {
 					let addr = ph.virtual_addr as usize;
 
 					let slice = &buffer[offset..offset + size];
-					info!("addr: {addr}, size: 0x{:x}", size);
 					ld(addr, size, slice.to_vec()).unwrap();
 				}
 			}
@@ -82,15 +92,11 @@ pub struct SpikeHandle {
 
 impl SpikeHandle {
 	pub fn new(size: usize, fname: &str) -> Self {
-		// register the callback function
-		spike_register_callback(rs_addr_to_mem);
+		// register the addr_to_mem callback
+		unsafe { spike_register_callback(rs_addr_to_mem) }
 
 		// create a new spike memory instance
-		let mut spike_mem = SPIKE_MEM.lock().unwrap();
-		if spike_mem.is_none() {
-			info!("Creating SpikeMem with size: {}", size);
-			*spike_mem = Some(Box::new(SpikeMem { mem: vec![0; size] }));
-		}
+		init_memory(size);
 
 		// load the elf file
 		let entry_addr = load_elf(fname).unwrap();
