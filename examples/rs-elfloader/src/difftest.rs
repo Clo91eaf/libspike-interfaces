@@ -17,9 +17,7 @@ impl Difftest {
 		}
 	}
 
-	pub fn execute(&mut self) -> anyhow::Result<()> {
-		self.spike.exec().unwrap();
-
-		Ok(())
+	pub fn execute(&mut self) -> anyhow::Result<u64> {
+		self.spike.exec()
 	}
 }

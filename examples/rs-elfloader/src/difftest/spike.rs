@@ -37,7 +37,10 @@ fn init_memory(size: usize) {
 	let mut spike_mem = SPIKE_MEM.lock().unwrap();
 	if spike_mem.is_none() {
 		info!("Creating SpikeMem with size: 0x{:x}", size);
-		*spike_mem = Some(Box::new(SpikeMem { mem: vec![0; size], size }));
+		*spike_mem = Some(Box::new(SpikeMem {
+			mem: vec![0; size],
+			size,
+		}));
 	}
 }
 
@@ -120,7 +123,7 @@ impl SpikeHandle {
 		SpikeHandle { spike }
 	}
 
-	pub fn exec(&self) -> anyhow::Result<i32> {
+	pub fn exec(&self) -> anyhow::Result<u64> {
 		let spike = self.spike;
 		let proc = unsafe { spike_get_proc(spike) };
 		let state = unsafe { proc_get_state(proc) };
@@ -142,6 +145,8 @@ impl SpikeHandle {
 			_ => panic!("Invalid new_pc: 0x{:x}", new_pc),
 		}
 
-		Ok(0)
+		let ret = unsafe { spike_exit(state) };
+
+		Ok(ret)
 	}
 }

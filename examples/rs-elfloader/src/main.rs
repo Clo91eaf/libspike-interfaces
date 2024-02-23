@@ -28,7 +28,11 @@ fn main() -> anyhow::Result<()> {
 	let mut diff = Difftest::new(1usize << 32, &args.elf_file);
 
 	loop {
-		diff.execute().unwrap();
+		let ret = diff.execute().unwrap();
+		if ret == 0 {
+			info!("Difftest finished success");
+			break;
+		}
 	}
 
 	Ok(())
