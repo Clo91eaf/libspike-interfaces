@@ -1,7 +1,7 @@
 { makeRustPlatform
 , myRustToolchain
 , libspike
-, libspike-interfaces
+, libspike_interfaces
 }:
 let
   myRustPlatform = makeRustPlatform {
@@ -10,12 +10,12 @@ let
   };
 
   self = myRustPlatform.buildRustPackage {
-    pname = "rs-elfloader";
+    pname = "rs_elfloader";
     version = "0.1.0";
-    src = ../../examples/rs-elfloader;
-    buildInputs = [ libspike libspike-interfaces ];
+    src = ../../examples/rs_elfloader;
+    buildInputs = [ libspike libspike_interfaces ];
     cargoLock = {
-      lockFile = ../../examples/rs-elfloader/Cargo.lock;
+      lockFile = ../../examples/rs_elfloader/Cargo.lock;
       outputHashes = {
         "fst-native-0.6.3" = "sha256-18g/euQQjS8euF+za7za9/0/esGkfZfioB1rlAt59S4=";
       };

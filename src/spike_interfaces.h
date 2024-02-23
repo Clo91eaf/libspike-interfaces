@@ -7,12 +7,12 @@
 #include "mmu.h"
 #include "processor.h"
 #include "simif.h"
+#include "spike_interfaces_c.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef char* (*ffi_callback)(uint64_t);
 ffi_callback ffi_addr_to_mem;
 
 class sim_t : public simif_t {
@@ -54,22 +54,6 @@ struct spike_state_t {
 struct spike_mmu_t {
   mmu_t* m;
 };
-
-void spike_register_callback(ffi_callback callback);
-spike_t* spike_new(const char* arch, const char* set, const char* lvl);
-const char* proc_disassemble(spike_processor_t* proc,
-                             spike_mmu_t* mmu,
-                             reg_t pc);
-void proc_reset(spike_processor_t* proc);
-spike_processor_t* spike_get_proc(spike_t* spike);
-spike_state_t* proc_get_state(spike_processor_t* proc);
-spike_mmu_t* proc_get_mmu(spike_processor_t* proc);
-reg_t mmu_func(spike_mmu_t* mmu, spike_processor_t* proc, reg_t pc);
-reg_t state_get_pc(spike_state_t* state);
-void state_set_pc(spike_state_t* state, reg_t pc);
-void state_set_serialized(spike_state_t* state, bool serialized);
-void destruct(void* ptr);
-reg_t spike_exit(spike_state_t* state);
 
 #ifdef __cplusplus
 }

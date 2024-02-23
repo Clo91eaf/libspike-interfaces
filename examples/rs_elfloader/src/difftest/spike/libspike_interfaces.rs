@@ -54,7 +54,7 @@ impl Drop for Mmu {
 
 type FfiCallback = extern "C" fn(u64) -> *mut u8;
 
-#[link(name = "spike-interfaces")]
+#[link(name = "spike_interfaces")]
 extern "C" {
   pub fn spike_register_callback(callback: FfiCallback);
 	pub fn spike_new(arch: *const c_char, set: *const c_char, lvl: *const c_char) -> *const Spike;
@@ -65,6 +65,7 @@ extern "C" {
 	pub fn proc_get_mmu(proc: *const Processor) -> *const Mmu;
 	pub fn mmu_func(mmu: *const Mmu, proc: *const Processor, pc: u64) -> u64;
 	pub fn state_get_pc(state: *const State) -> u64;
+	pub fn handle_pc(state: *const State, pc: u64) -> u64;
 	pub fn state_set_pc(state: *const State, pc: u64);
 	pub fn state_set_serialized(state: *const State, serialized: bool);
 	pub fn destruct(ptr: *const c_void);

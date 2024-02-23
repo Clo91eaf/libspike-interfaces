@@ -23,10 +23,10 @@ We use nix flake as our primary build system. If you have not installed nix, ins
 To build the library, run:
 
 ```bash
-nix build .#libspike-interfaces
+nix build .#libspike_interfaces
 ```
 
-The resulting shared library (`libspike-interfaces.so`) will be available in the `result/lib`.
+The resulting shared library (`libspike_interfaces.so`) will be available in the `result/lib`.
 
 ### Run & Test Example Code
 
@@ -46,7 +46,7 @@ nix run .#elfloader ./resources/conv-mlir.elf
 And you can run and test the Rust example code as follows:
 
 ```bash
-nix run .#rs-elfloader -- -e ./resources/conv-mlir.elf
+nix run .#rs_elfloader -- -e ./resources/conv-mlir.elf
 ```
 
 ## Contributing

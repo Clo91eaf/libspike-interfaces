@@ -1,5 +1,5 @@
 [package]
-name = "rs-elfloader"
+name = "rs_elfloader"
 version = "0.1.0"
 edition = "2021"
 

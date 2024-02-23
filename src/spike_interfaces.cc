@@ -1,4 +1,4 @@
-#include "spike-interfaces.h"
+#include "spike_interfaces.h"
 
 constexpr uint32_t CSR_MSIMEND = 0x7cc;
 
@@ -68,6 +68,23 @@ reg_t state_get_pc(spike_state_t* state) {
   return state->s->pc;
 }
 
+uint64_t handle_pc(spike_state_t* state, uint64_t new_pc) {
+  if ((new_pc & 1) == 0) {
+    state_set_pc(state, new_pc);
+  } else {
+    switch (new_pc) {
+      case PC_SERIALIZE_BEFORE:
+        state_set_serialized(state, true);
+        break;
+      case PC_SERIALIZE_AFTER:
+        break;
+      default:
+        return -1;
+    }
+  }
+  return 0;
+}
+
 void state_set_pc(spike_state_t* state, reg_t pc) {
   state->s->pc = pc;
 }
@@ -83,7 +100,7 @@ void destruct(void* ptr) {
 }
 
 reg_t spike_exit(spike_state_t* state) {
-  auto &csrmap = state->s->csrmap;
+  auto& csrmap = state->s->csrmap;
   return csrmap[CSR_MSIMEND]->read();
 }
 
