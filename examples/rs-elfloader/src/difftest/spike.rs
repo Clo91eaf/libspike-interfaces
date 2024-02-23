@@ -16,12 +16,14 @@ use libspike_interfaces::*;
 
 // read the addr from spike memory
 // caller should make sure the address is valid
-extern "C" fn rs_addr_to_mem(addr: u64) -> *mut u8 {
+#[no_mangle]
+pub extern "C" fn rs_addr_to_mem(addr: u64) -> *mut u8 {
 	let addr = addr as usize;
 	let mut spike_mem = SPIKE_MEM.lock().unwrap();
 	let spike_mut = spike_mem.as_mut().unwrap();
 	&mut spike_mut.mem[addr] as *mut u8
 }
+
 
 pub struct SpikeMem {
 	pub mem: Vec<u8>,
@@ -75,14 +77,13 @@ pub fn load_elf(fname: &str) -> anyhow::Result<u64> {
 }
 
 pub struct SpikeHandle {
-	size: usize,
-	spike: Box<Spike>,
+	spike: *const Spike,
 }
 
 impl SpikeHandle {
 	pub fn new(size: usize, fname: &str) -> Self {
 		// register the callback function
-		unsafe { spike_register_callback(rs_addr_to_mem) };
+		spike_register_callback(rs_addr_to_mem);
 
 		// create a new spike memory instance
 		let mut spike_mem = SPIKE_MEM.lock().unwrap();
@@ -95,9 +96,13 @@ impl SpikeHandle {
 		let entry_addr = load_elf(fname).unwrap();
 
 		// initialize spike
-		let arch = CString::new("vlen:1024,elen:32").unwrap().as_ptr();
-		let set = CString::new("rv32gcv").unwrap().as_ptr();
-		let lvl = CString::new("M").unwrap().as_ptr();
+		let arch_cstring = CString::new("vlen:1024,elen:32").unwrap();
+		let set_cstring = CString::new("rv32gcv").unwrap();
+		let lvl_cstring = CString::new("M").unwrap();
+
+		let arch = arch_cstring.as_ptr();
+		let set = set_cstring.as_ptr();
+		let lvl = lvl_cstring.as_ptr();
 		let spike = unsafe { spike_new(arch, set, lvl) };
 
 		// initialize processor
@@ -106,11 +111,12 @@ impl SpikeHandle {
 		unsafe { proc_reset(proc) };
 		unsafe { state_set_pc(state, entry_addr) };
 
-		SpikeHandle { size, spike }
+		SpikeHandle { spike }
 	}
 
 	pub fn exec(&self) -> anyhow::Result<i32> {
-		let proc = unsafe { spike_get_proc(self.spike) };
+		let spike = self.spike;
+		let proc = unsafe { spike_get_proc(spike) };
 		let state = unsafe { proc_get_state(proc) };
 		let mmu = unsafe { proc_get_mmu(proc) };
 

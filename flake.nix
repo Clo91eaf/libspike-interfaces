@@ -7,7 +7,7 @@
     rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
-  outputs = { self, nixpkgs, flake-utils, rust-overlay}@inputs:
+  outputs = { self, nixpkgs, flake-utils, rust-overlay }@inputs:
     let
       overlay = import ./nix/overlay.nix;
     in
