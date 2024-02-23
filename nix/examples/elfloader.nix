@@ -5,8 +5,7 @@ let
 in
 stdenv.mkDerivation {
   inherit pname version;
-  src = ../../tests;
-
+  src = ../../examples/elfloader;
   nativeBuildInputs = [ cmake ];
   buildInputs = [ libspike-interfaces libspike ];
 }

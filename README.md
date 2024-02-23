@@ -37,7 +37,7 @@ nix build .#elfloader
 ./result/bin/elfloader ./resources/conv-mlir.elf
 ```
 
-Alternatively, you can use nix to run in one line:
+Alternatively, you can just run in one line:
 
 ```bash
 nix run .#elfloader ./resources/conv-mlir.elf

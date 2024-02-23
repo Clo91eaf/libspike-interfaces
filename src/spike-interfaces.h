@@ -1,5 +1,3 @@
-#ifndef __SPIKE_INTERFCES_H__
-#define __SPIKE_INTERFCES_H__
 
 #include "cfg.h"
 #include "decode_macros.h"
@@ -47,7 +45,7 @@ struct spike_processor_t { processor_t* p; };
 struct spike_state_t { state_t* s; };
 struct spike_mmu_t { mmu_t* m; };
 
-spike_t* spike_new(const char* varch, const char* isa, const char* priv);
+spike_t* spike_new(const char* arch, const char* set, const char* lvl);
 extern void spike_register_callback(ffi_callback callback);
 const char* proc_disassemble(spike_processor_t* proc, spike_mmu_t* mmu, reg_t pc);
 void proc_reset(spike_processor_t* proc);
