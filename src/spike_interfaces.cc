@@ -109,3 +109,19 @@ void spike_register_callback(ffi_callback callback) {
 
   return;
 }
+
+void spike_destruct(spike_t* spike) {
+  delete spike;
+}
+
+void proc_destruct(spike_processor_t* proc) {
+  delete proc;
+}
+
+void state_destruct(spike_state_t* state) {
+  delete state;
+}
+
+void mmu_destruct(spike_mmu_t* mmu) {
+  delete mmu;
+}

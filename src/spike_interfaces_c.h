@@ -28,7 +28,10 @@ uint64_t state_get_pc(spike_state_t* state);
 uint64_t handle_pc(spike_state_t* state, uint64_t new_pc);
 void state_set_pc(spike_state_t* state, uint64_t pc);
 void state_set_serialized(spike_state_t* state, bool serialized);
-void destruct(void* ptr);
+void spike_destruct(spike_t* spike);
+void proc_destruct(spike_processor_t* proc);
+void state_destruct(spike_state_t* state);
+void mmu_destruct(spike_mmu_t* mmu);
 uint64_t spike_exit(spike_state_t* state);
 
 #ifdef __cplusplus

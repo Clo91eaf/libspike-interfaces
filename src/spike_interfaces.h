@@ -44,6 +44,7 @@ class Spike {
 
 struct spike_t {
   Spike* s;
+  ffi_callback ffi_addr_to_mem;
 };
 struct spike_processor_t {
   processor_t* p;

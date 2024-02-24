@@ -5,25 +5,9 @@ pub struct Spike {
 	spike: *const c_void,
 }
 
-impl Drop for Spike {
-	fn drop(&mut self) {
-		unsafe {
-			destruct(self.spike);
-		}
-	}
-}
-
 #[repr(C)]
 pub struct Processor {
 	processor: *const c_void,
-}
-
-impl Drop for Processor {
-	fn drop(&mut self) {
-		unsafe {
-			destruct(self.processor);
-		}
-	}
 }
 
 #[repr(C)]
@@ -31,25 +15,9 @@ pub struct State {
 	state: *const c_void,
 }
 
-impl Drop for State {
-	fn drop(&mut self) {
-		unsafe {
-			destruct(self.state);
-		}
-	}
-}
-
 #[repr(C)]
 pub struct Mmu {
 	mmu: *const c_void,
-}
-
-impl Drop for Mmu {
-	fn drop(&mut self) {
-		unsafe {
-			destruct(self.mmu);
-		}
-	}
 }
 
 type FfiCallback = extern "C" fn(u64) -> *mut u8;
@@ -68,7 +36,10 @@ extern "C" {
 	pub fn handle_pc(state: *const State, pc: u64) -> u64;
 	pub fn state_set_pc(state: *const State, pc: u64);
 	pub fn state_set_serialized(state: *const State, serialized: bool);
-	pub fn destruct(ptr: *const c_void);
+	pub fn spike_destruct(spike: *const Spike);
+	pub fn proc_destruct(proc: *const Processor);
+	pub fn state_destruct(state: *const State);
+	pub fn mmu_destruct(mmu: *const Mmu);
 	pub fn spike_exit(state: *const State) -> u64;
 }
 

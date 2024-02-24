@@ -98,7 +98,6 @@ int main(int argc, char* argv[]) {
   proc_reset(proc);
   state_set_pc(state, addr);
 
-  // execute
   while (true) {
     int ret = execute(spike);
     if (ret)
@@ -108,9 +107,9 @@ int main(int argc, char* argv[]) {
   int exit_success = spike_exit(state);
 
   // destruct
-  destruct(state);
-  destruct(proc);
-  destruct(spike);
+  state_destruct(state);
+  proc_destruct(proc);
+  spike_destruct(spike);
 
   if (exit_success != 0) {
     perror("Execute failed");
