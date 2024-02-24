@@ -90,7 +90,7 @@ fn load_elf(fname: &str) -> anyhow::Result<u64> {
 }
 
 pub struct SpikeHandle {
-	spike: *const Spike,
+	spike: *mut Spike,
 }
 
 impl SpikeHandle {
