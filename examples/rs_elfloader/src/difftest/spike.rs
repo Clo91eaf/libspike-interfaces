@@ -127,16 +127,15 @@ impl SpikeHandle {
 		let spike = self.spike;
 		let proc = unsafe { spike_get_proc(spike) };
 		let state = unsafe { proc_get_state(proc) };
-		let mmu = unsafe { proc_get_mmu(proc) };
 
 		let pc = unsafe { state_get_pc(state) };
-		let disasm = unsafe { proc_disassemble(proc, mmu, pc) }; // TODO: free disasm
+		let disasm = unsafe { proc_disassemble(proc, pc) }; // TODO: free disasm
 
 		info!("pc: 0x{:x}, disasm: {:?}", pc, unsafe {
 			CString::from_raw(disasm as *mut c_char)
 		});
 
-		let new_pc = unsafe { mmu_func(mmu, proc, pc) };
+		let new_pc = unsafe { proc_func(proc, pc) };
 
 		match new_pc {
 			pc if pc % 2 == 0 => unsafe { state_set_pc(state, pc) },

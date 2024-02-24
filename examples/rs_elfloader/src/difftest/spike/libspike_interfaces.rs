@@ -26,12 +26,12 @@ type FfiCallback = extern "C" fn(u64) -> *mut u8;
 extern "C" {
   pub fn spike_register_callback(callback: FfiCallback);
 	pub fn spike_new(arch: *const c_char, set: *const c_char, lvl: *const c_char) -> *const Spike;
-	pub fn proc_disassemble(proc: *const Processor, mmu: *const Mmu, pc: u64) -> *const c_char;
+	pub fn proc_disassemble(proc: *const Processor, pc: u64) -> *const c_char;
 	pub fn proc_reset(proc: *const Processor);
 	pub fn spike_get_proc(spike: *const Spike) -> *const Processor;
 	pub fn proc_get_state(proc: *const Processor) -> *const State;
 	pub fn proc_get_mmu(proc: *const Processor) -> *const Mmu;
-	pub fn mmu_func(mmu: *const Mmu, proc: *const Processor, pc: u64) -> u64;
+	pub fn proc_func(proc: *const Processor, pc: u64) -> u64;
 	pub fn state_get_pc(state: *const State) -> u64;
 	pub fn handle_pc(state: *const State, pc: u64) -> u64;
 	pub fn state_set_pc(state: *const State, pc: u64);

@@ -35,11 +35,10 @@ spike_t* spike_new(const char* arch, const char* set, const char* lvl) {
   return new spike_t{new Spike(arch, set, lvl)};
 }
 
-const char* proc_disassemble(spike_processor_t* proc,
-                             spike_mmu_t* mmu,
-                             reg_t pc) {
-  auto fetch = mmu->m->load_insn(pc);
+const char* proc_disassemble(spike_processor_t* proc, reg_t pc) {
+  auto mmu = proc->p->get_mmu();
   auto disasm = proc->p->get_disassembler();
+  auto fetch = mmu->load_insn(pc);
   return strdup(disasm->disassemble(fetch.insn).c_str());
 }
 
@@ -59,8 +58,9 @@ spike_mmu_t* proc_get_mmu(spike_processor_t* proc) {
   return new spike_mmu_t{proc->p->get_mmu()};
 }
 
-reg_t mmu_func(spike_mmu_t* mmu, spike_processor_t* proc, reg_t pc) {
-  auto fetch = mmu->m->load_insn(pc);
+reg_t proc_func(spike_processor_t* proc, reg_t pc) {
+  auto mmu = proc->p->get_mmu();
+  auto fetch = mmu->load_insn(pc);
   return fetch.func(proc->p, fetch.insn, pc);
 }
 

@@ -53,14 +53,13 @@ char* addr_to_mem(uint64_t addr) {
 uint32_t execute(spike_t* spike) {
   spike_processor_t* proc = spike_get_proc(spike);
   spike_state_t* state = proc_get_state(proc);
-  spike_mmu_t* mmu = proc_get_mmu(proc);
 
   uint64_t pc = state_get_pc(state);
-  const char* disasm = proc_disassemble(proc, mmu, pc);
+  const char* disasm = proc_disassemble(proc, pc);
 
   fprintf(stderr, "PC: %08x, disasm: %s\n", pc, disasm);
 
-  uint64_t new_pc = mmu_func(mmu, proc, pc);
+  uint64_t new_pc = proc_func(proc, pc);
 
   if (spike_exit(state) == 0) {
     return -1;
