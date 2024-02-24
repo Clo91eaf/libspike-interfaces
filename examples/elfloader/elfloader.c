@@ -61,12 +61,12 @@ uint32_t execute(spike_t* spike) {
 
   uint64_t new_pc = proc_func(proc, pc);
 
-  if (spike_exit(state) == 0) {
+  if (state_exit(state) == 0) {
     return -1;
   }
 
   // Bypass CSR insns commitlog stuff.
-  int ret = handle_pc(state, new_pc);
+  int ret = state_handle_pc(state, new_pc);
   if (ret != 0) {
     perror("Invalid PC");
     exit(EXIT_FAILURE);
@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
       break;
   }
 
-  int exit_success = spike_exit(state);
+  int exit_success = state_exit(state);
 
   // destruct
   state_destruct(state);

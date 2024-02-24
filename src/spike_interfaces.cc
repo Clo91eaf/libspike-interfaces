@@ -54,10 +54,6 @@ spike_state_t* proc_get_state(spike_processor_t* proc) {
   return new spike_state_t{proc->p->get_state()};
 }
 
-spike_mmu_t* proc_get_mmu(spike_processor_t* proc) {
-  return new spike_mmu_t{proc->p->get_mmu()};
-}
-
 reg_t proc_func(spike_processor_t* proc, reg_t pc) {
   auto mmu = proc->p->get_mmu();
   auto fetch = mmu->load_insn(pc);
@@ -68,7 +64,11 @@ reg_t state_get_pc(spike_state_t* state) {
   return state->s->pc;
 }
 
-uint64_t handle_pc(spike_state_t* state, uint64_t new_pc) {
+static void state_set_serialized(spike_state_t* state, bool serialized) {
+  state->s->serialized = serialized;
+}
+
+uint64_t state_handle_pc(spike_state_t* state, uint64_t new_pc) {
   if ((new_pc & 1) == 0) {
     state_set_pc(state, new_pc);
   } else {
@@ -85,13 +85,10 @@ uint64_t handle_pc(spike_state_t* state, uint64_t new_pc) {
   return 0;
 }
 
-void state_set_pc(spike_state_t* state, reg_t pc) {
+void state_set_pc(spike_state_t* state, uint64_t pc) {
   state->s->pc = pc;
 }
 
-void state_set_serialized(spike_state_t* state, bool serialized) {
-  state->s->serialized = serialized;
-}
 
 void destruct(void* ptr) {
   if (ptr == nullptr)
@@ -99,7 +96,7 @@ void destruct(void* ptr) {
   delete ptr;
 }
 
-reg_t spike_exit(spike_state_t* state) {
+reg_t state_exit(spike_state_t* state) {
   auto& csrmap = state->s->csrmap;
   return csrmap[CSR_MSIMEND]->read();
 }
@@ -120,8 +117,4 @@ void proc_destruct(spike_processor_t* proc) {
 
 void state_destruct(spike_state_t* state) {
   delete state;
-}
-
-void mmu_destruct(spike_mmu_t* mmu) {
-  delete mmu;
 }

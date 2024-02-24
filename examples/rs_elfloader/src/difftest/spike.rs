@@ -1,7 +1,5 @@
 use crate::info;
 use lazy_static::lazy_static;
-use libc::c_char;
-use std::ffi::CString;
 use std::fs::File;
 use std::io::Read;
 use std::sync::Mutex;
@@ -90,7 +88,7 @@ fn load_elf(fname: &str) -> anyhow::Result<u64> {
 }
 
 pub struct SpikeHandle {
-	spike: *mut Spike,
+	spike: Spike,
 }
 
 impl SpikeHandle {
@@ -105,46 +103,36 @@ impl SpikeHandle {
 		let entry_addr = load_elf(fname).unwrap();
 
 		// initialize spike
-		let arch_cstring = CString::new("vlen:1024,elen:32").unwrap();
-		let set_cstring = CString::new("rv32gcv").unwrap();
-		let lvl_cstring = CString::new("M").unwrap();
+		let arch = "vlen:1024,elen:32";
+		let set = "rv32gcv";
+		let lvl = "M";
 
-		let arch = arch_cstring.as_ptr();
-		let set = set_cstring.as_ptr();
-		let lvl = lvl_cstring.as_ptr();
-		let spike = unsafe { spike_new(arch, set, lvl) };
+		let spike = Spike::new(arch, set, lvl);
 
 		// initialize processor
-		let proc = unsafe { spike_get_proc(spike) };
-		let state = unsafe { proc_get_state(proc) };
-		unsafe { proc_reset(proc) };
-		unsafe { state_set_pc(state, entry_addr) };
+		let proc = spike.get_proc();
+		let state = proc.get_state();
+		proc.reset();
+		state.set_pc(entry_addr);
 
 		SpikeHandle { spike }
 	}
 
 	pub fn exec(&self) -> anyhow::Result<u64> {
-		let spike = self.spike;
-		let proc = unsafe { spike_get_proc(spike) };
-		let state = unsafe { proc_get_state(proc) };
+		let spike = &self.spike;
+		let proc = spike.get_proc();
+		let state = proc.get_state();
 
-		let pc = unsafe { state_get_pc(state) };
-		let disasm = unsafe { proc_disassemble(proc, pc) }; // TODO: free disasm
+		let pc = state.get_pc();
+		let disasm = proc.disassemble(pc);
 
-		info!("pc: 0x{:x}, disasm: {:?}", pc, unsafe {
-			CString::from_raw(disasm as *mut c_char)
-		});
+		info!("pc: 0x{:x}, disasm: {:?}", pc, disasm);
 
-		let new_pc = unsafe { proc_func(proc, pc) };
+		let new_pc = proc.func(pc);
 
-		match new_pc {
-			pc if pc % 2 == 0 => unsafe { state_set_pc(state, pc) },
-			3 => unsafe { state_set_serialized(state, true) },
-			5 => {}
-			_ => panic!("Invalid new_pc: 0x{:x}", new_pc),
-		}
+		state.handle_pc(new_pc).unwrap();
 
-		let ret = unsafe { spike_exit(state) };
+		let ret = state.exit();
 
 		Ok(ret)
 	}
