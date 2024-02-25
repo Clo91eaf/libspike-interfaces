@@ -89,7 +89,6 @@ void state_set_pc(spike_state_t* state, uint64_t pc) {
   state->s->pc = pc;
 }
 
-
 void destruct(void* ptr) {
   if (ptr == nullptr)
     return;
@@ -99,12 +98,6 @@ void destruct(void* ptr) {
 reg_t state_exit(spike_state_t* state) {
   auto& csrmap = state->s->csrmap;
   return csrmap[CSR_MSIMEND]->read();
-}
-
-void spike_register_callback(ffi_callback callback) {
-  ffi_addr_to_mem = callback;
-
-  return;
 }
 
 void spike_destruct(spike_t* spike) {
@@ -117,4 +110,9 @@ void proc_destruct(spike_processor_t* proc) {
 
 void state_destruct(spike_state_t* state) {
   delete state;
+}
+
+void spike_set_callback(callback_t callback, void* data) {
+  global_callback = callback;
+  global_data = data;
 }

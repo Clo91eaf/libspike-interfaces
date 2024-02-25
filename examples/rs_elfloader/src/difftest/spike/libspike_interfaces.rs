@@ -1,4 +1,4 @@
-use libc::c_char;
+use libc::{c_char, c_void};
 use std::ffi::{CStr, CString};
 
 pub struct Spike {
@@ -6,11 +6,19 @@ pub struct Spike {
 }
 
 impl Spike {
-	pub fn new(arch: &str, set: &str, lvl: &str) -> Self {
+	pub fn new<F: FnMut(u64) -> *mut u8>(arch: &str, set: &str, lvl: &str, callback: &mut F) -> Self {
 		let arch = CString::new(arch).unwrap();
 		let set = CString::new(set).unwrap();
 		let lvl = CString::new(lvl).unwrap();
 		let spike = unsafe { spike_new(arch.as_ptr(), set.as_ptr(), lvl.as_ptr()) };
+
+		extern "C" fn caller<F: FnMut(u64) -> *mut u8>(data: *mut c_void, arg: u64) -> *mut u8 {
+			let data = unsafe { &mut *(data as *mut F) };
+			data(arg)
+		}
+
+		unsafe { spike_set_callback(caller::<F>, callback as *mut _ as _) }
+
 		Spike { spike }
 	}
 
@@ -88,12 +96,11 @@ impl Drop for State {
 	}
 }
 
-
-type FfiCallback = extern "C" fn(u64) -> *mut u8;
+type Callback = extern "C" fn(data: *mut c_void, arg: u64) -> *mut u8;
 
 #[link(name = "spike_interfaces")]
 extern "C" {
-	pub fn spike_register_callback(callback: FfiCallback);
+	fn spike_set_callback(callback: Callback, data: *mut c_void);
 	fn spike_new(arch: *const c_char, set: *const c_char, lvl: *const c_char) -> *mut ();
 	fn spike_get_proc(spike: *mut ()) -> *mut ();
 	fn spike_destruct(spike: *mut ());

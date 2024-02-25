@@ -76,13 +76,19 @@ uint32_t execute(spike_t* spike) {
   return 0;
 }
 
+typedef char* (*func_t)(uint64_t args);
+
+char* callback(void* data, uint64_t args) {
+  return ((func_t)data)(args);
+}
+
 int main(int argc, char* argv[]) {
   if (argc != 2) {
     exit(1);
   }
 
   // Register callback function for memory access
-  spike_register_callback(addr_to_mem);
+  spike_set_callback(callback, addr_to_mem);
 
   // Prepare memory
   uint32_t addr = load_elf(argv[1]);

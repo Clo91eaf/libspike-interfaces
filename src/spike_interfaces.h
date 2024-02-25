@@ -13,13 +13,11 @@
 extern "C" {
 #endif
 
-ffi_callback ffi_addr_to_mem;
-
 class sim_t : public simif_t {
  public:
   sim_t() {}
   ~sim_t() {}
-  char* addr_to_mem(reg_t addr) override { return ffi_addr_to_mem(addr); }
+  char* addr_to_mem(reg_t addr) override { return global_callback(global_data, addr); }
   bool mmio_load(reg_t addr, size_t len, uint8_t* bytes) override {}
   bool mmio_store(reg_t addr, size_t len, const uint8_t* bytes) override {}
   virtual void proc_reset(unsigned id) override {}
@@ -44,7 +42,6 @@ class Spike {
 
 struct spike_t {
   Spike* s;
-  ffi_callback ffi_addr_to_mem;
 };
 struct spike_processor_t {
   processor_t* p;

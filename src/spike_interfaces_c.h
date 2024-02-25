@@ -7,13 +7,16 @@
 extern "C" {
 #endif
 
-typedef char* (*ffi_callback)(uint64_t);
+typedef char* (*callback_t)(void* data, uint64_t args);
+
+callback_t global_callback;
+void* global_data;
 
 typedef struct spike_t spike_t;
 typedef struct spike_processor_t spike_processor_t;
 typedef struct spike_state_t spike_state_t;
 
-void spike_register_callback(ffi_callback callback);
+void spike_set_callback(callback_t callback, void* data);
 spike_t* spike_new(const char* arch, const char* set, const char* lvl);
 const char* proc_disassemble(spike_processor_t* proc, uint64_t pc);
 void proc_reset(spike_processor_t* proc);
