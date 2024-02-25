@@ -1,12 +1,13 @@
 use libc::{c_char, c_void};
 use std::ffi::{CStr, CString};
 
-pub struct Spike {
+pub struct Spike<'mem> {
 	spike: *mut (),
+	phantom: std::marker::PhantomData<&'mem ()>,
 }
 
-impl Spike {
-	pub fn new<F: FnMut(u64) -> *mut u8>(arch: &str, set: &str, lvl: &str, callback: &mut F) -> Self {
+impl<'mem> Spike<'mem> {
+	pub fn new<F: FnMut(u64) -> *mut u8>(arch: &str, set: &str, lvl: &str, callback: &'mem mut F) -> Self {
 		let arch = CString::new(arch).unwrap();
 		let set = CString::new(set).unwrap();
 		let lvl = CString::new(lvl).unwrap();
@@ -19,7 +20,7 @@ impl Spike {
 
 		unsafe { spike_set_callback(caller::<F>, callback as *mut _ as _) }
 
-		Spike { spike }
+		Spike { spike, phantom: std::marker::PhantomData }
 	}
 
 	pub fn get_proc(&self) -> Processor {
@@ -28,7 +29,7 @@ impl Spike {
 	}
 }
 
-impl Drop for Spike {
+impl Drop for Spike<'_> {
 	fn drop(&mut self) {
 		unsafe { spike_destruct(self.spike) }
 	}

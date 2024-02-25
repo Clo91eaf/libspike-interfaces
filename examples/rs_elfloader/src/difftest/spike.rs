@@ -81,15 +81,15 @@ impl Drop for SpikeMem {
 	}
 }
 
-pub struct SpikeHandle {
-	spike: Spike,
-	mem: SpikeMem,
+pub struct SpikeHandle<'mem> {
+	spike: Spike<'mem>,
+	mem: &'mem mut SpikeMem,
 }
 
-impl SpikeHandle {
+impl<'mem> SpikeHandle<'mem> {
 	pub fn new(size: usize, fname: &str) -> Self {
 		// create a new spike memory instance
-		let mut mem = SpikeMem::new(size);
+		let mem = SpikeMem::new(size);
 
 		// load the elf file
 		let entry_addr = mem.load_elf(fname).unwrap();
@@ -99,7 +99,9 @@ impl SpikeHandle {
 		let set = "rv32gcv";
 		let lvl = "M";
 
-		let spike = Spike::new(arch, set, lvl, &mut |x| mem.rs_addr_to_mem(x));
+		let mut callback = |x| mem.rs_addr_to_mem(x);
+
+		let spike = Spike::new(arch, set, lvl, &mut callback);
 
 		// initialize processor
 		let proc = spike.get_proc();
