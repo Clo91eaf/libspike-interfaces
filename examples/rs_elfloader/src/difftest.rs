@@ -4,12 +4,12 @@ mod spike;
 // use dut::Dut;
 use spike::SpikeHandle;
 
-pub struct Difftest<'mem> {
-	spike: SpikeHandle<'mem>,
+pub struct Difftest {
+	spike: SpikeHandle,
 	// dut: Dut,
 }
 
-impl<'mem> Difftest<'mem> {
+impl Difftest {
 	pub fn new(size: usize, elf_file:&str) -> Self {
 		Self {
 			spike: SpikeHandle::new(size, elf_file),

@@ -6,6 +6,7 @@ use xmas_elf::{
 	program::{ProgramHeader, Type},
 	ElfFile,
 };
+use std::cell::RefCell;
 
 mod libspike_interfaces;
 use libspike_interfaces::*;
@@ -20,6 +21,7 @@ pub struct SpikeMem {
 
 impl SpikeMem {
 	fn new(size: usize) -> Self {
+		info!("SpikeMem created: size: 0x{:x}", size);
 		SpikeMem {
 			mem: vec![0; size],
 			size,
@@ -81,25 +83,31 @@ impl Drop for SpikeMem {
 	}
 }
 
-pub struct SpikeHandle<'mem> {
-	spike: Spike<'mem>,
-	mem: &'mem mut SpikeMem,
+pub struct SpikeHandle {
+	spike: Spike,
+	_mem: Box<SpikeMem>,
 }
 
-impl<'mem> SpikeHandle<'mem> {
+impl Drop for SpikeHandle {
+	fn drop(&mut self) {
+		info!("SpikeHandle dropped");
+	}
+}
+
+impl SpikeHandle {
 	pub fn new(size: usize, fname: &str) -> Self {
 		// create a new spike memory instance
-		let mem = SpikeMem::new(size);
+		let mut _mem = Box::new(SpikeMem::new(size));
 
 		// load the elf file
-		let entry_addr = mem.load_elf(fname).unwrap();
+		let entry_addr = _mem.load_elf(fname).unwrap();
 
 		// initialize spike
 		let arch = "vlen:1024,elen:32";
 		let set = "rv32gcv";
 		let lvl = "M";
 
-		let mut callback = |x| mem.rs_addr_to_mem(x);
+		let mut callback = |x| _mem.rs_addr_to_mem(x);
 
 		let spike = Spike::new(arch, set, lvl, &mut callback);
 
@@ -109,7 +117,7 @@ impl<'mem> SpikeHandle<'mem> {
 		proc.reset();
 		state.set_pc(entry_addr);
 
-		SpikeHandle { spike, mem }
+		SpikeHandle { spike, _mem }
 	}
 
 	pub fn exec(&self) -> anyhow::Result<u64> {
